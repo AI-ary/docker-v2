@@ -17,6 +17,7 @@ grafana/data
 .idea
 
 .env
+data
 
 
 # User-specific stuff
