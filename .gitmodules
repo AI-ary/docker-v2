@@ -1,0 +1,6 @@
+[submodule "backend-spring"]
+	path = backend-spring
+	url = https://github.com/AI-ary/backend-spring.git
+[submodule "frontend"]
+	path = frontend
+	url = https://github.com/AI-ary/frontend.git
