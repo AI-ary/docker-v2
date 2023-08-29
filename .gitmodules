@@ -4,3 +4,6 @@
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/AI-ary/frontend.git
+[submodule "Ai-flask"]
+	path = Ai-flask
+	url = https://github.com/AI-ary/Ai-flask.git
