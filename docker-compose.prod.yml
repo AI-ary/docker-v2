@@ -5,13 +5,15 @@ services:
     restart: unless-stopped
     build:
       context: ./frontend
-      dockerfile: Dockerfile # 배포때는 dockerfile: dockerfile.prod
+      dockerfile: dockerfile.prod
+      args:
+        API_URL: "*"
     ports:
       - 3000:3000
     volumes:
+      - build_frontend:/frontend/dist
       - ./frontend/:/frontend
-      - /frontend/node_modules #배포때는 ./frontend/node_modules:/frontend/node_modules
-
+      - ./frontend/node_modules:/frontend/node_modules
     environment:
       - CI=true
       - CHOKIDAR_USEPOLLING=true
@@ -21,37 +23,12 @@ services:
     networks:
       - aiary
 
-  #  mysql:
-  #    container_name: mysql
-  #    image: mysql:latest
-  #    environment:
-  #      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  #      MYSQL_USER: ${MYSQL_USER}
-  #      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #      MYSQL_DATABASE: ${MYSQL_DATABASE}
-  #    command:
-  #      - '--character-set-server=utf8mb4'
-  #      - '--collation-server=utf8mb4_unicode_ci'
-  #    ports:
-  #      - "3307:3306"
-  #    volumes:
-  #      - ./data:/var/lib/mysql
-  #    networks:
-  #      - aiary
-
   backend:
     container_name: backend
     build:
       context: backend-spring
     restart: always
-    #    depends_on:
-    #      - mysql
-    #    ports:
-    #      - "8080:8080"
     environment:
-      #      SPRING_DATASOURCE_URL: ${MYSQL_URL}
-      #      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      #      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     networks:
       - aiary
