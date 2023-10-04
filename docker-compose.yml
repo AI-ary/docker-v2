@@ -115,8 +115,8 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
     ports:
-      - "5672:5672" # Default Port
-      - "15672:15672" # For UI
+      - "5672:5672"
+      - "15672:15672"
     depends_on:
       - ai_backend
     networks:
