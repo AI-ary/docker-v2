@@ -48,6 +48,42 @@ services:
     networks:
       - aiary
 
+  elasticsearch:
+    container_name: elasticsearch
+    restart: always
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.1
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - ES_JAVA_OPTS=-Xms2048m -Xmx2048m
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./backend-spring/elk/elasticsearch/data:/usr/share/elasticsearch/data
+    networks:
+      - aiary
+
+  logstash:
+    container_name: logstash
+    image: docker.elastic.co/logstash/logstash:8.8.1  
+    build:
+      context: ./backend-spring/elk  
+    volumes:         
+      - ./backend-spring/elk/logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "5044:5044"
+    environment:
+      - "xpack.monitoring.enabled=false"
+    depends_on:
+      - elasticsearch
+    networks:
+      - aiary
+
   ai_backend:
     container_name: ai_backend
     build:
@@ -94,8 +130,8 @@ services:
       - RABBITMQ_USER=guest
       - RABBITMQ_PASSWORD=guest
     ports:
-      - "5672:5672" # Default Port
-      - "15672:15672" # For UI
+      - "5672:5672"
+      - "15672:15672"
     depends_on:
       - ai_backend
     networks:
