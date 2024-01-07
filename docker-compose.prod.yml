@@ -9,7 +9,7 @@ services:
       args:
         API_URL: "*"
     ports:
-      - 3000:3000
+      - "3000:3000"
     volumes:
       - build_frontend:/frontend/dist
       - ./frontend/:/frontend
@@ -26,63 +26,110 @@ services:
   backend:
     container_name: backend
     build:
-      context: backend-spring
+      context: ./backend-spring
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "7001:7001"
+      - "7002:7002"
+      - "7003:7003"
+      - "7004:7004"
+      - "7005:7005"
+      - "7006:7006"
     restart: always
-    environment:
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
     networks:
       - aiary
 
-  redis:
-    container_name: redis
-    image: redis:latest
-    ports:
-      - 6379:6379
+  node1:
+    network_mode: "service:backend"
+    container_name: node1
+    image: redis
     volumes:
-      - ./redis/data:/data
-    labels:
-      - "name=redis"
-      - "mode=standalone"
-    restart: always
-    command: redis-server
+      - ./redis/redis1.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       - aiary
 
-  elasticsearch:
-    container_name: elasticsearch
-    restart: always
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.1
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    environment:
-      - ES_JAVA_OPTS=-Xms2048m -Xmx2048m
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+  node2:
+    network_mode: "service:backend"
+    container_name: node2
+    image: redis
     volumes:
-      - ./backend-spring/elk/elasticsearch/data:/usr/share/elasticsearch/data
-    networks:
-      - aiary
+      - ./redis/redis2.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
 
-  logstash:
-    container_name: logstash
-    image: docker.elastic.co/logstash/logstash:8.8.1  
-    build:
-      context: ./backend-spring/elk  
-    volumes:         
-      - ./backend-spring/elk/logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
-    ports:
-      - "5044:5044"
-    environment:
-      - "xpack.monitoring.enabled=false"
+  node3:
+    network_mode: "service:backend"
+    container_name: node3
+    image: redis
+    volumes:
+      - ./redis/redis3.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  node4:
+    network_mode: "service:backend"
+    container_name: node4
+    image: redis
+    volumes:
+      - ./redis/redis4.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  node5:
+    network_mode: "service:backend"
+    container_name: node5
+    image: redis
+    volumes:
+      - ./redis/redis5.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  node6:
+    network_mode: "service:backend"
+    container_name: node6
+    image: redis
+    volumes:
+      - ./redis/redis6.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis-cluster-entry:
+    network_mode: "service:backend"
+    image: redis
+    container_name: redis-cluster
+    command: redis-cli --cluster create 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 --cluster-replicas 1 --cluster-yes
     depends_on:
-      - elasticsearch
+      - node1
+      - node2
+      - node3
+      - node4
+      - node5
+      - node6
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
     networks:
       - aiary
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./backend-spring/data/grafana:/var/lib/grafana
+      - ./prometheus/grafana.ini:/etc/grafana/grafana.ini
+    restart: unless-stopped
+    ports:
+      - "3030:3030"
+    depends_on:
+      - prometheus
+    env_file:
+      - ./prometheus/grafana.env
+    networks:
+      - aiary
+
 
   ai_backend:
     container_name: ai_backend
@@ -109,9 +156,6 @@ services:
       - build_frontend:/var/www/frontend
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/log:/var/log/nginx
-    # expose:
-    #   - "80"
-    #   - "443"
     depends_on:
       - ai_backend
       - backend
@@ -170,32 +214,6 @@ services:
     networks:
       - aiary
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    restart: unless-stopped
-    ports:
-      - 9090:9090
-    networks:
-      - aiary
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    volumes:
-      - ./backend-spring/data/grafana:/var/lib/grafana
-      - ./prometheus/grafana.ini:/etc/grafana/grafana.ini
-    restart: unless-stopped
-    ports:
-      - 3030:3030
-    depends_on:
-      - prometheus
-    env_file:
-      - ./prometheus/grafana.env
-    networks:
-      - aiary
 
 networks:
   aiary:
