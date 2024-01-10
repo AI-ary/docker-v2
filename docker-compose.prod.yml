@@ -47,8 +47,6 @@ services:
     volumes:
       - ./redis/redis1.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
-    networks:
-      - aiary
 
   node2:
     network_mode: "service:backend"
